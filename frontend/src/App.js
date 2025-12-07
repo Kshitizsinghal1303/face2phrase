@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, StopCircle, Send, CheckCircle, Loader, User, Briefcase, FileText, Clock, BarChart3, AlertCircle } from 'lucide-react';
+import { Camera, StopCircle, Send, CheckCircle, Loader, User, Briefcase, FileText, Clock, BarChart3, AlertCircle, Activity } from 'lucide-react';
+import AnalysisDashboard from './AnalysisDashboard';
 
 const InterviewAssistant = () => {
   const [step, setStep] = useState('form');
@@ -20,6 +21,7 @@ const InterviewAssistant = () => {
   const [recordingTime, setRecordingTime] = useState(0);
   const [apiStats, setApiStats] = useState(null);
   const [processingProgress, setProcessingProgress] = useState(0);
+  const [resultsTab, setResultsTab] = useState('analysis');
   
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -249,7 +251,7 @@ const InterviewAssistant = () => {
       const response = await fetch(`http://localhost:8000/api/finalize/${sessionId}`, {
         method: 'POST'
       });
-      const data = await response.json();
+      await response.json();
       clearInterval(progressInterval);
       setProcessingProgress(100);
       setTimeout(() => setStep('results'), 500);
@@ -814,172 +816,238 @@ const InterviewAssistant = () => {
   }
 
   if (step === 'results') {
+    
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '40px 20px',
+        background: 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)',
         fontFamily: 'system-ui, -apple-system, sans-serif'
       }}>
+        {/* Header */}
         <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto'
+          background: 'white',
+          borderBottom: '1px solid #e2e8f0',
+          padding: '20px'
         }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '20px',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            padding: '40px',
-            marginBottom: '30px',
-            textAlign: 'center'
-          }}>
-            <CheckCircle style={{ width: '64px', height: '64px', color: '#48bb78', margin: '0 auto 20px' }} />
-            <h2 style={{ fontSize: '36px', fontWeight: 'bold', color: '#333', margin: '0 0 16px 0' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
+            <CheckCircle style={{ width: '48px', height: '48px', color: '#48bb78', margin: '0 auto 15px' }} />
+            <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#333', margin: '0 0 10px 0' }}>
               Interview Complete!
-            </h2>
-            <p style={{ color: '#666', fontSize: '18px', marginBottom: '20px', lineHeight: '1.6' }}>
-              Your interview has been successfully processed. Download your reports below.
+            </h1>
+            <p style={{ color: '#666', fontSize: '16px', margin: 0 }}>
+              Your interview has been successfully processed with advanced speech and video analysis.
             </p>
-            
-            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '30px' }}>
-              <button
-                onClick={async () => {
-                  try {
-                    const response = await fetch(`http://localhost:8000/api/download-feedback/${sessionId}`);
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `feedback_${sessionId}.pdf`;
-                    a.click();
-                  } catch (error) {
-                    alert('Error downloading feedback: ' + error.message);
-                  }
-                }}
-                style={{
-                  background: '#667eea',
-                  color: 'white',
-                  padding: '14px 28px',
-                  borderRadius: '10px',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <FileText style={{ width: '20px', height: '20px' }} />
-                Download Feedback Report
-              </button>
-              
-              <button
-                onClick={async () => {
-                  try {
-                    const response = await fetch(`http://localhost:8000/api/download-answers/${sessionId}`);
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `expected_answers_${sessionId}.pdf`;
-                    a.click();
-                  } catch (error) {
-                    alert('Error downloading answers: ' + error.message);
-                  }
-                }}
-                style={{
-                  background: '#48bb78',
-                  color: 'white',
-                  padding: '14px 28px',
-                  borderRadius: '10px',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <FileText style={{ width: '20px', height: '20px' }} />
-                Download Expected Answers
-              </button>
+          </div>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div style={{ 
+          background: 'white', 
+          borderBottom: '1px solid #e2e8f0',
+          padding: '0 20px'
+        }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '0' }}>
+            {[
+              { id: 'analysis', label: 'Advanced Analysis', icon: Activity },
+              { id: 'reports', label: 'Traditional Reports', icon: FileText }
+            ].map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setResultsTab(tab.id)}
+                  style={{
+                    padding: '15px 25px',
+                    border: 'none',
+                    background: resultsTab === tab.id ? '#667eea' : 'transparent',
+                    color: resultsTab === tab.id ? 'white' : '#667eea',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    borderRadius: '8px 8px 0 0',
+                    fontWeight: '600',
+                    fontSize: '16px',
+                    transition: 'all 0.3s'
+                  }}
+                >
+                  <Icon style={{ width: '20px', height: '20px' }} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Content */}
+        {resultsTab === 'analysis' && (
+          <AnalysisDashboard sessionId={sessionId} />
+        )}
+
+        {resultsTab === 'reports' && (
+          <div style={{ padding: '40px 20px' }}>
+            <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+              {/* Download Buttons */}
+              <div style={{
+                background: 'white',
+                borderRadius: '12px',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                padding: '30px',
+                marginBottom: '30px',
+                textAlign: 'center'
+              }}>
+                <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#333', margin: '0 0 20px 0' }}>
+                  Download Reports
+                </h2>
+                
+                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(`http://localhost:8000/api/download-feedback/${sessionId}`);
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `feedback_${sessionId}.pdf`;
+                        a.click();
+                      } catch (error) {
+                        alert('Error downloading feedback: ' + error.message);
+                      }
+                    }}
+                    style={{
+                      background: '#667eea',
+                      color: 'white',
+                      padding: '14px 28px',
+                      borderRadius: '10px',
+                      fontSize: '16px',
+                      fontWeight: 'bold',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <FileText style={{ width: '20px', height: '20px' }} />
+                    Download Feedback Report
+                  </button>
+                  
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(`http://localhost:8000/api/download-answers/${sessionId}`);
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `expected_answers_${sessionId}.pdf`;
+                        a.click();
+                      } catch (error) {
+                        alert('Error downloading answers: ' + error.message);
+                      }
+                    }}
+                    style={{
+                      background: '#48bb78',
+                      color: 'white',
+                      padding: '14px 28px',
+                      borderRadius: '10px',
+                      fontSize: '16px',
+                      fontWeight: 'bold',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <FileText style={{ width: '20px', height: '20px' }} />
+                    Download Expected Answers
+                  </button>
+                </div>
+              </div>
+
+              {/* Report Previews */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginBottom: '30px' }}>
+                <div style={{
+                  background: 'white',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                  padding: '30px',
+                  maxHeight: '600px',
+                  overflow: 'auto'
+                }}>
+                  <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#333', marginBottom: '20px' }}>
+                    📊 Performance Feedback
+                  </h3>
+                  <iframe
+                    src={`http://localhost:8000/api/view-feedback/${sessionId}`}
+                    style={{
+                      width: '100%',
+                      minHeight: '500px',
+                      border: 'none',
+                      borderRadius: '8px'
+                    }}
+                    title="Feedback Report"
+                  />
+                </div>
+
+                <div style={{
+                  background: 'white',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                  padding: '30px',
+                  maxHeight: '600px',
+                  overflow: 'auto'
+                }}>
+                  <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#333', marginBottom: '20px' }}>
+                    ✅ Expected Answers
+                  </h3>
+                  <iframe
+                    src={`http://localhost:8000/api/view-answers/${sessionId}`}
+                    style={{
+                      width: '100%',
+                      minHeight: '500px',
+                      border: 'none',
+                      borderRadius: '8px'
+                    }}
+                    title="Expected Answers"
+                  />
+                </div>
+              </div>
             </div>
           </div>
+        )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginBottom: '30px' }}>
-            <div style={{
-              background: 'white',
-              borderRadius: '20px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-              padding: '30px',
-              maxHeight: '600px',
-              overflow: 'auto'
-            }}>
-              <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#333', marginBottom: '20px' }}>
-                📊 Performance Feedback
-              </h3>
-              <iframe
-                src={`http://localhost:8000/api/view-feedback/${sessionId}`}
-                style={{
-                  width: '100%',
-                  minHeight: '500px',
-                  border: 'none',
-                  borderRadius: '10px'
-                }}
-                title="Feedback Report"
-              />
-            </div>
-
-            <div style={{
-              background: 'white',
-              borderRadius: '20px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-              padding: '30px',
-              maxHeight: '600px',
-              overflow: 'auto'
-            }}>
-              <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#333', marginBottom: '20px' }}>
-                ✅ Expected Answers
-              </h3>
-              <iframe
-                src={`http://localhost:8000/api/view-answers/${sessionId}`}
-                style={{
-                  width: '100%',
-                  minHeight: '500px',
-                  border: 'none',
-                  borderRadius: '10px'
-                }}
-                title="Expected Answers"
-              />
-            </div>
-          </div>
-
-          <div style={{ textAlign: 'center' }}>
-            <button
-              onClick={() => {
-                setStep('form');
-                setCurrentQuestionIndex(0);
-                setRecordedVideos({});
-                setFormData({ name: '', email: '', position: '', experience: '', jd: '' });
-                setSessionId(null);
-              }}
-              style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                padding: '16px 40px',
-                borderRadius: '10px',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.3s'
-              }}
-            >
-              Start New Interview
-            </button>
-          </div>
+        {/* Footer */}
+        <div style={{ 
+          background: 'white', 
+          borderTop: '1px solid #e2e8f0',
+          padding: '20px',
+          textAlign: 'center'
+        }}>
+          <button
+            onClick={() => {
+              setStep('form');
+              setCurrentQuestionIndex(0);
+              setRecordedVideos({});
+              setFormData({ name: '', email: '', position: '', experience: '', jd: '' });
+              setSessionId(null);
+            }}
+            style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              padding: '16px 40px',
+              borderRadius: '10px',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.3s'
+            }}
+          >
+            Start New Interview
+          </button>
         </div>
       </div>
     );

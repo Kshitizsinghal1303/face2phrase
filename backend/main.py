@@ -24,6 +24,10 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import threading
 
+# Import new analysis modules
+from speech_analyzer_simple import SpeechAnalyzer
+from video_analyzer_simple import VideoAnalyzer
+
 # Initialize FastAPI
 app = FastAPI(title="Face2Phrase Interview Assistant - Optimized")
 
@@ -200,6 +204,15 @@ async def generate_with_gemini(prompt: str, max_retries: int = None) -> str:
 print("Loading Whisper model...")
 whisper_model = whisper.load_model("base")  # You can use "tiny" for even faster processing
 print("Whisper model loaded!")
+
+# Initialize analysis modules
+print("Initializing speech analyzer...")
+speech_analyzer = SpeechAnalyzer()
+print("Speech analyzer initialized!")
+
+print("Initializing video analyzer...")
+video_analyzer = VideoAnalyzer()
+print("Video analyzer initialized!")
 
 # Thread pool for parallel processing
 executor = ThreadPoolExecutor(max_workers=4)
@@ -542,7 +555,7 @@ async def upload_video(
         raise HTTPException(status_code=500, detail=str(e))
 
 async def process_video_background(session_id: str, question_index: int, video_path: str, video_filename: str):
-    """Background task for video processing"""
+    """Enhanced background task for video processing with speech and video analysis"""
     try:
         session_dir = BASE_DIR / session_id
         
@@ -572,6 +585,83 @@ async def process_video_background(session_id: str, question_index: int, video_p
         
         transcript_text = result["text"].strip()
         
+        # Advanced Speech Analysis
+        speech_analysis = None
+        if audio_extracted:
+            try:
+                print(f"🎤 Starting speech analysis for question {question_index + 1}...")
+                speech_analysis = await loop.run_in_executor(
+                    executor,
+                    speech_analyzer.analyze_audio,
+                    str(audio_path)
+                )
+                
+                # Generate speech visualization
+                speech_visualization = await loop.run_in_executor(
+                    executor,
+                    speech_analyzer.create_interactive_visualization,
+                    speech_analysis
+                )
+                
+                # Generate speech report
+                speech_report = await loop.run_in_executor(
+                    executor,
+                    speech_analyzer.generate_speech_report,
+                    speech_analysis
+                )
+                
+                # Save speech analysis results
+                speech_analysis_path = session_dir / "reports" / f"speech_analysis_{question_index + 1}.json"
+                async with aiofiles.open(speech_analysis_path, 'w') as f:
+                    await f.write(json.dumps({
+                        'analysis': speech_analysis,
+                        'visualization': speech_visualization,
+                        'report': speech_report
+                    }, indent=2))
+                
+                print(f"✅ Speech analysis completed for question {question_index + 1}")
+                
+            except Exception as e:
+                print(f"⚠️ Speech analysis error for question {question_index + 1}: {str(e)}")
+        
+        # Advanced Video Analysis
+        video_analysis = None
+        try:
+            print(f"📹 Starting video analysis for question {question_index + 1}...")
+            video_analysis = await loop.run_in_executor(
+                executor,
+                video_analyzer.analyze_video,
+                video_path
+            )
+            
+            # Generate video visualization
+            video_visualization = await loop.run_in_executor(
+                executor,
+                video_analyzer.create_video_visualization,
+                video_analysis
+            )
+            
+            # Generate video report
+            video_report = await loop.run_in_executor(
+                executor,
+                video_analyzer.generate_video_report,
+                video_analysis
+            )
+            
+            # Save video analysis results
+            video_analysis_path = session_dir / "reports" / f"video_analysis_{question_index + 1}.json"
+            async with aiofiles.open(video_analysis_path, 'w') as f:
+                await f.write(json.dumps({
+                    'analysis': video_analysis,
+                    'visualization': video_visualization,
+                    'report': video_report
+                }, indent=2))
+            
+            print(f"✅ Video analysis completed for question {question_index + 1}")
+            
+        except Exception as e:
+            print(f"⚠️ Video analysis error for question {question_index + 1}: {str(e)}")
+        
         # Save transcript
         transcript_filename = f"question_{question_index + 1}.txt"
         transcript_path = session_dir / "transcripts" / transcript_filename
@@ -580,7 +670,7 @@ async def process_video_background(session_id: str, question_index: int, video_p
             await f.write(f"Question: {sessions[session_id]['questions'][question_index]}\n\n")
             await f.write(f"Transcript:\n{transcript_text}\n")
         
-        # Update session
+        # Update session with enhanced data
         if "transcripts" not in sessions[session_id]:
             sessions[session_id]["transcripts"] = {}
         
@@ -588,10 +678,12 @@ async def process_video_background(session_id: str, question_index: int, video_p
             "text": transcript_text,
             "video_file": video_filename,
             "audio_file": audio_filename if audio_extracted else None,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "speech_analysis": speech_analysis is not None,
+            "video_analysis": video_analysis is not None
         }
         
-        print(f"✅ Processed question {question_index + 1}: {len(transcript_text)} chars")
+        print(f"✅ Enhanced processing completed for question {question_index + 1}: {len(transcript_text)} chars")
         
     except Exception as e:
         print(f"❌ Background processing error: {str(e)}")
@@ -926,6 +1018,96 @@ async def view_answers(session_id: str):
     
     return HTMLResponse(content=html)
 
+@app.get("/api/speech-analysis/{session_id}/{question_index}")
+async def get_speech_analysis(session_id: str, question_index: int):
+    """Get speech analysis results for a specific question"""
+    try:
+        if session_id not in sessions:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        session_dir = BASE_DIR / session_id
+        speech_analysis_path = session_dir / "reports" / f"speech_analysis_{question_index + 1}.json"
+        
+        if not speech_analysis_path.exists():
+            raise HTTPException(status_code=404, detail="Speech analysis not found")
+        
+        async with aiofiles.open(speech_analysis_path, 'r') as f:
+            content = await f.read()
+            return json.loads(content)
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/video-analysis/{session_id}/{question_index}")
+async def get_video_analysis(session_id: str, question_index: int):
+    """Get video analysis results for a specific question"""
+    try:
+        if session_id not in sessions:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        session_dir = BASE_DIR / session_id
+        video_analysis_path = session_dir / "reports" / f"video_analysis_{question_index + 1}.json"
+        
+        if not video_analysis_path.exists():
+            raise HTTPException(status_code=404, detail="Video analysis not found")
+        
+        async with aiofiles.open(video_analysis_path, 'r') as f:
+            content = await f.read()
+            return json.loads(content)
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/combined-analysis/{session_id}")
+async def get_combined_analysis(session_id: str):
+    """Get combined speech and video analysis for all questions"""
+    try:
+        if session_id not in sessions:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        session_data = sessions[session_id]
+        session_dir = BASE_DIR / session_id
+        
+        combined_results = {
+            'session_info': {
+                'session_id': session_id,
+                'candidate': session_data.get('candidate', {}),
+                'questions': session_data.get('questions', []),
+                'total_questions': len(session_data.get('questions', []))
+            },
+            'question_analyses': []
+        }
+        
+        for idx in range(len(session_data.get('questions', []))):
+            question_analysis = {
+                'question_index': idx,
+                'question': session_data['questions'][idx],
+                'transcript': session_data.get('transcripts', {}).get(idx, {}).get('text', ''),
+                'speech_analysis': None,
+                'video_analysis': None
+            }
+            
+            # Load speech analysis if available
+            speech_path = session_dir / "reports" / f"speech_analysis_{idx + 1}.json"
+            if speech_path.exists():
+                async with aiofiles.open(speech_path, 'r') as f:
+                    speech_content = await f.read()
+                    question_analysis['speech_analysis'] = json.loads(speech_content)
+            
+            # Load video analysis if available
+            video_path = session_dir / "reports" / f"video_analysis_{idx + 1}.json"
+            if video_path.exists():
+                async with aiofiles.open(video_path, 'r') as f:
+                    video_content = await f.read()
+                    question_analysis['video_analysis'] = json.loads(video_content)
+            
+            combined_results['question_analyses'].append(question_analysis)
+        
+        return combined_results
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint"""
@@ -933,6 +1115,8 @@ async def health_check():
     return {
         "status": "healthy",
         "whisper_model": "loaded",
+        "speech_analyzer": "initialized",
+        "video_analyzer": "initialized",
         "gemini_model": "configured",
         "active_sessions": len(sessions),
         "available_api_keys": len([s for s in stats if s["status"] == "available"]),
