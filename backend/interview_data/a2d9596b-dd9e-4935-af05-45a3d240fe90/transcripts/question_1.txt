@@ -1,0 +1,4 @@
+Question: Tell me about a time you found a bug that was particularly challenging to identify or reproduce. What steps did you take to investigate and ultimately resolve the issue?
+
+Transcript:
+Jingle bell, jingle bell, jingle all the way, center closes coming now, riding on the sledge.

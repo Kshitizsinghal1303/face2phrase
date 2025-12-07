@@ -1,0 +1,190 @@
+{
+  "session_id": "a2d9596b-dd9e-4935-af05-45a3d240fe90",
+  "candidate": {
+    "name": "kshitis",
+    "email": "kshitiz1303@gmail.com",
+    "position": "qa",
+    "experience": "1 year",
+    "jd": ""
+  },
+  "questions": [
+    "Tell me about a time you found a bug that was particularly challenging to identify or reproduce. What steps did you take to investigate and ultimately resolve the issue?",
+    "Describe your experience with different testing methodologies (e.g., black box, white box, regression testing). Which methodology do you find most effective and why?",
+    "Imagine you're testing a new feature and are running short on time. How would you prioritize your testing efforts to ensure the most critical aspects are covered?",
+    "Have you used any bug tracking tools (e.g., Jira, Bugzilla)? Describe your process for reporting a bug, including the key information you include in your report.",
+    "Tell me about a time you disagreed with a developer about whether something was a bug. How did you handle the situation professionally and what was the outcome?"
+  ],
+  "created_at": "2025-12-06T20:18:01.966299",
+  "status": "completed",
+  "transcripts": {
+    "0": {
+      "text": "Jingle bell, jingle bell, jingle all the way, center closes coming now, riding on the sledge.",
+      "video_file": "question_1.webm",
+      "audio_file": "question_1.wav",
+      "timestamp": "2025-12-06T20:19:07.438203"
+    },
+    "1": {
+      "text": "Single bell, single bell, single all the way, center closed coming around writing and this link.",
+      "video_file": "question_2.webm",
+      "audio_file": "question_2.wav",
+      "timestamp": "2025-12-06T20:19:51.265772"
+    },
+    "2": {
+      "text": "Iskade Galevich No Entry, No Entry",
+      "video_file": "question_3.webm",
+      "audio_file": "question_3.wav",
+      "timestamp": "2025-12-06T20:20:00.400968"
+    },
+    "3": {
+      "text": "I love you.",
+      "video_file": "question_4.webm",
+      "audio_file": "question_4.wav",
+      "timestamp": "2025-12-06T20:20:06.521616"
+    },
+    "4": {
+      "text": "I love you, I love you",
+      "video_file": "question_5.webm",
+      "audio_file": "question_5.wav",
+      "timestamp": "2025-12-06T20:20:17.936313"
+    }
+  },
+  "feedback_data": {
+    "candidate": {
+      "name": "kshitis",
+      "email": "kshitiz1303@gmail.com",
+      "position": "qa",
+      "experience": "1 year",
+      "jd": ""
+    },
+    "question_feedbacks": [
+      {
+        "question": "Tell me about a time you found a bug that was particularly challenging to identify or reproduce. What steps did you take to investigate and ultimately resolve the issue?",
+        "user_answer": "Jingle bell, jingle bell, jingle all the way, center closes coming now, riding on the sledge.",
+        "ratings": {
+          "relevance": 1,
+          "clarity": 1,
+          "depth": 1,
+          "confidence": 1,
+          "overall": 1
+        },
+        "feedback": "This answer is completely irrelevant to the question asked. It provides no information about debugging or problem-solving skills and appears to be nonsensical in the context of a job interview."
+      },
+      {
+        "question": "Describe your experience with different testing methodologies (e.g., black box, white box, regression testing). Which methodology do you find most effective and why?",
+        "user_answer": "Single bell, single bell, single all the way, center closed coming around writing and this link.",
+        "ratings": {
+          "relevance": 1,
+          "clarity": 1,
+          "depth": 1,
+          "confidence": 1,
+          "overall": 1
+        },
+        "feedback": "This answer is completely nonsensical and does not address the question at all. It provides no information about the candidate's experience with testing methodologies and appears to be random words or phrases. This response would be considered unacceptable in an interview setting."
+      },
+      {
+        "question": "Imagine you're testing a new feature and are running short on time. How would you prioritize your testing efforts to ensure the most critical aspects are covered?",
+        "user_answer": "Iskade Galevich No Entry, No Entry",
+        "ratings": {
+          "relevance": 7,
+          "clarity": 7,
+          "depth": 7,
+          "confidence": 7,
+          "overall": 7
+        },
+        "feedback": "Good attempt."
+      },
+      {
+        "question": "Have you used any bug tracking tools (e.g., Jira, Bugzilla)? Describe your process for reporting a bug, including the key information you include in your report.",
+        "user_answer": "I love you.",
+        "ratings": {
+          "relevance": 1,
+          "clarity": 1,
+          "depth": 1,
+          "confidence": 1,
+          "overall": 1
+        },
+        "feedback": "This answer is completely irrelevant and inappropriate. It provides no information about bug tracking tools, bug reporting processes, or the candidate's experience. This response would be a major red flag for any interviewer."
+      },
+      {
+        "question": "Tell me about a time you disagreed with a developer about whether something was a bug. How did you handle the situation professionally and what was the outcome?",
+        "user_answer": "I love you, I love you",
+        "ratings": {
+          "relevance": 1,
+          "clarity": 1,
+          "depth": 1,
+          "confidence": 1,
+          "overall": 1
+        },
+        "feedback": "This answer is completely inadequate. The candidate provided no response, indicating a failure to address the question and a lack of relevant experience or willingness to share it. This answer provides no insight into the candidate's problem-solving skills, communication style, or ability to handle conflict."
+      }
+    ],
+    "overall_summary": "The candidate demonstrated a limited understanding of the role's requirements and struggled to articulate their experiences clearly. Their responses lacked depth and specific examples, hindering the evaluation of their skills and qualifications. Overall, the candidate's performance suggests they are not yet prepared for this role, requiring further development in communication and technical expertise. They also need to improve their confidence during interviews.",
+    "recommendations": [
+      "Practice the STAR method to structure responses with specific examples and measurable results.",
+      "Research the company and role thoroughly to demonstrate genuine interest and understanding.",
+      "Seek opportunities to enhance technical skills relevant to the job description.",
+      "Participate in mock interviews to improve communication and build confidence.",
+      "Prepare thoughtful questions to ask the interviewer, showcasing engagement and curiosity."
+    ]
+  },
+  "answers_data": {
+    "candidate": {
+      "name": "kshitis",
+      "email": "kshitiz1303@gmail.com",
+      "position": "qa",
+      "experience": "1 year",
+      "jd": ""
+    },
+    "expected_answers": [
+      {
+        "question": "Tell me about a time you found a bug that was particularly challenging to identify or reproduce. What steps did you take to investigate and ultimately resolve the issue?",
+        "expected_answer": "3-4 sentences",
+        "key_points": [
+          "Describe a specific bug encountered in a project or testing scenario.",
+          "Highlight the difficulty in identifying or reproducing the bug (e.g., intermittent behavior, obscure conditions).",
+          "Explain the steps taken to investigate the bug, including specific tools or techniques used (e.g., debugging, logging, network analysis, code review).",
+          "Concisely explain how the issue was ultimately resolved and what was learned from the experience."
+        ]
+      },
+      {
+        "question": "Describe your experience with different testing methodologies (e.g., black box, white box, regression testing). Which methodology do you find most effective and why?",
+        "expected_answer": "3-4 sentences",
+        "key_points": [
+          "Demonstrate understanding of multiple methodologies (Black Box, White Box, Regression).",
+          "State experience with each methodology (e.g., specific projects, tools used).",
+          "Clearly articulate which methodology is preferred and provide a concise, logical reason (e.g., based on project type, team expertise, test coverage).",
+          "Avoid absolutes; acknowledge that the 'best' methodology depends on the context."
+        ]
+      },
+      {
+        "question": "Imagine you're testing a new feature and are running short on time. How would you prioritize your testing efforts to ensure the most critical aspects are covered?",
+        "expected_answer": "Given limited time, I'd prioritize testing based on risk and impact. First, I'd focus on the core functionality and critical user workflows, ensuring they are stable and error-free. Then, I'd address high-risk areas identified during design or development, followed by any remaining time on edge cases and less critical features.",
+        "key_points": [
+          "Prioritize based on risk and impact to the user.",
+          "Focus on core functionality and critical user workflows.",
+          "Address known high-risk areas.",
+          "Allocate remaining time to edge cases and less critical features."
+        ]
+      },
+      {
+        "question": "Have you used any bug tracking tools (e.g., Jira, Bugzilla)? Describe your process for reporting a bug, including the key information you include in your report.",
+        "expected_answer": "3-4 sentences",
+        "key_points": [
+          "Experience with specific bug tracking tools (Jira, Bugzilla, etc.)",
+          "Detailed description of the bug reporting process",
+          "Emphasis on key information included in a bug report (reproducible steps, expected vs. actual results, severity/priority, environment details)"
+        ]
+      },
+      {
+        "question": "Tell me about a time you disagreed with a developer about whether something was a bug. How did you handle the situation professionally and what was the outcome?",
+        "expected_answer": "3-4 sentences",
+        "key_points": [
+          "Clearly explain the differing perspectives on the functionality in question and why you believed it was a bug based on requirements or user expectations.",
+          "Describe your approach to resolving the disagreement, highlighting objective evidence (e.g., specifications, test cases, user stories) used to support your position.",
+          "Detail the outcome of the discussion, emphasizing a collaborative resolution (e.g., code change, requirement clarification, agreed-upon workaround) and the impact on product quality.",
+          "Show professionalism and respect for the developer's perspective, even if you maintained your stance."
+        ]
+      }
+    ]
+  }
+}
