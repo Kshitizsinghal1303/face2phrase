@@ -9,8 +9,8 @@ google-generativeai==0.3.1
 
 # Whisper for speech-to-text
 openai-whisper==20231117
-torch==2.1.0
-torchaudio==2.1.0
+torch>=2.2.0
+torchaudio>=2.2.0
 
 # Audio/Video processing
 ffmpeg-python==0.2.0
@@ -27,3 +27,27 @@ psycopg2-binary==2.9.9
 # Additional utilities
 numpy==1.26.2
 pandas==2.1.3
+
+# PDF generation
+reportlab==4.0.7
+
+# Speech Analysis Dependencies
+librosa==0.10.1
+scipy==1.11.4
+matplotlib==3.8.2
+plotly==5.17.0
+soundfile==0.12.1
+praat-parselmouth==0.4.3
+
+# Computer Vision and Facial Analysis
+opencv-python>=4.8.0
+mediapipe>=0.10.0
+face-recognition>=1.3.0
+fer>=22.5.0
+
+# Machine Learning
+scikit-learn>=1.3.0
+
+# Image processing
+Pillow==10.1.0
+imutils==0.5.4
