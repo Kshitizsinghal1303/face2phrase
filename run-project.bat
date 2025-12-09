@@ -60,7 +60,13 @@ if exist "requirements-windows.txt" (
 REM Install additional Windows-specific packages if needed
 echo.
 echo Installing additional Windows compatibility packages...
+echo Uninstalling any existing PyTorch to avoid DLL conflicts...
+pip uninstall -y torch torchvision torchaudio
+echo Installing CPU-only PyTorch for Windows compatibility...
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+echo.
+echo Installing additional Windows-specific packages...
+pip install librosa==0.10.1 scipy matplotlib plotly
 
 cd ..
 

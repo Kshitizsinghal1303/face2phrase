@@ -38,10 +38,11 @@ reportlab==4.0.7
 
 # Speech Analysis Dependencies (Windows compatible versions)
 librosa==0.10.1
-scipy==1.10.1
+scipy==1.11.4
 matplotlib==3.7.2
 plotly==5.17.0
 soundfile==0.12.1
+numba==0.58.1
 
 # Computer Vision (Windows compatible)
 opencv-python==4.8.1.78
