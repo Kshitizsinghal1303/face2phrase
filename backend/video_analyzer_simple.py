@@ -120,6 +120,10 @@ class VideoAnalyzer:
         
         return json.dumps(mock_plot)
     
+    def create_video_visualization(self, analysis_results: Dict) -> str:
+        """Create video visualization - alias for create_interactive_visualization"""
+        return self.create_interactive_visualization(analysis_results)
+    
     def generate_video_report(self, analysis_results: Dict) -> Dict:
         """Generate mock video report"""
         return {

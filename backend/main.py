@@ -46,16 +46,16 @@ except ImportError as e:
     logger.warning(f"Google Generative AI not available: {e}. AI features will be limited.")
     GEMINI_AVAILABLE = False
 
-# Whisper for speech-to-text
+# Whisper for speech-to-text with robust fallback handling
 try:
-    import whisper
+    from whisper_fallback import load_whisper_with_fallback, transcribe_with_fallback, WhisperFallback
     WHISPER_AVAILABLE = True
-    logger.info("Whisper loaded successfully")
+    logger.info("Whisper fallback system loaded successfully")
 except ImportError as e:
-    logger.error(f"Whisper not available: {e}. Speech-to-text will be disabled.")
+    logger.error(f"Whisper fallback not available: {e}. Speech-to-text will be disabled.")
     WHISPER_AVAILABLE = False
 except Exception as e:
-    logger.error(f"Error loading Whisper: {e}. This might be a Windows DLL issue.")
+    logger.error(f"Error loading Whisper fallback: {e}")
     WHISPER_AVAILABLE = False
 
 # Analysis modules with fallbacks
@@ -245,18 +245,22 @@ async def generate_with_gemini(prompt: str, max_retries: int = None) -> str:
         detail=f"All API keys exhausted after {attempts} attempts. Last error: {last_error}"
     )
 
-# Initialize Whisper model with error handling
+# Initialize Whisper model with robust fallback handling
 whisper_model = None
 if WHISPER_AVAILABLE:
     try:
-        print("Loading Whisper model...")
-        whisper_model = whisper.load_model("base")  # You can use "tiny" for even faster processing
-        print("Whisper model loaded successfully!")
+        print("Loading Whisper model with fallback support...")
+        whisper_model = load_whisper_with_fallback("base")
+        if isinstance(whisper_model, WhisperFallback):
+            print("⚠️ Using Whisper fallback mode due to DLL issues")
+        else:
+            print("✅ Whisper model loaded successfully!")
     except Exception as e:
         logger.error(f"Failed to load Whisper model: {e}")
+        print("⚠️ Whisper not available - speech-to-text will be disabled")
         WHISPER_AVAILABLE = False
 else:
-    print("Whisper not available - speech-to-text will be disabled")
+    print("⚠️ Whisper not available - speech-to-text will be disabled")
 
 # Initialize analysis modules with error handling
 speech_analyzer = None
@@ -686,7 +690,8 @@ async def process_video_background(session_id: str, question_index: int, video_p
                 
                 result = await loop.run_in_executor(
                     executor,
-                    lambda: whisper_model.transcribe(
+                    lambda: transcribe_with_fallback(
+                        whisper_model,
                         transcription_file,
                         language="en",
                         fp16=False  # Better compatibility
