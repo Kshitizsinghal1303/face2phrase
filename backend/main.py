@@ -1,10 +1,17 @@
 
+import sys
+import warnings
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Core imports
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
-import google.generativeai as genai
-import whisper
 import uuid
 import os
 import json
@@ -13,20 +20,58 @@ import aiofiles
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 import subprocess
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
 import time
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import threading
 
-# Import new analysis modules
-from speech_analyzer_simple import SpeechAnalyzer
-from video_analyzer_simple import VideoAnalyzer
+# PDF generation
+try:
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
+    REPORTLAB_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"ReportLab not available: {e}. PDF generation will be disabled.")
+    REPORTLAB_AVAILABLE = False
+
+# Google Gemini AI
+try:
+    import google.generativeai as genai
+    GEMINI_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Google Generative AI not available: {e}. AI features will be limited.")
+    GEMINI_AVAILABLE = False
+
+# Whisper for speech-to-text
+try:
+    import whisper
+    WHISPER_AVAILABLE = True
+    logger.info("Whisper loaded successfully")
+except ImportError as e:
+    logger.error(f"Whisper not available: {e}. Speech-to-text will be disabled.")
+    WHISPER_AVAILABLE = False
+except Exception as e:
+    logger.error(f"Error loading Whisper: {e}. This might be a Windows DLL issue.")
+    WHISPER_AVAILABLE = False
+
+# Analysis modules with fallbacks
+try:
+    from speech_analyzer_simple import SpeechAnalyzer
+    SPEECH_ANALYSIS_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Speech analyzer not available: {e}")
+    SPEECH_ANALYSIS_AVAILABLE = False
+
+try:
+    from video_analyzer_simple import VideoAnalyzer
+    VIDEO_ANALYSIS_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Video analyzer not available: {e}")
+    VIDEO_ANALYSIS_AVAILABLE = False
 
 # Initialize FastAPI
 app = FastAPI(title="Face2Phrase Interview Assistant - Optimized")
@@ -200,19 +245,43 @@ async def generate_with_gemini(prompt: str, max_retries: int = None) -> str:
         detail=f"All API keys exhausted after {attempts} attempts. Last error: {last_error}"
     )
 
-# Load Whisper model (use tiny for faster processing)
-print("Loading Whisper model...")
-whisper_model = whisper.load_model("base")  # You can use "tiny" for even faster processing
-print("Whisper model loaded!")
+# Initialize Whisper model with error handling
+whisper_model = None
+if WHISPER_AVAILABLE:
+    try:
+        print("Loading Whisper model...")
+        whisper_model = whisper.load_model("base")  # You can use "tiny" for even faster processing
+        print("Whisper model loaded successfully!")
+    except Exception as e:
+        logger.error(f"Failed to load Whisper model: {e}")
+        WHISPER_AVAILABLE = False
+else:
+    print("Whisper not available - speech-to-text will be disabled")
 
-# Initialize analysis modules
-print("Initializing speech analyzer...")
-speech_analyzer = SpeechAnalyzer()
-print("Speech analyzer initialized!")
+# Initialize analysis modules with error handling
+speech_analyzer = None
+if SPEECH_ANALYSIS_AVAILABLE:
+    try:
+        print("Initializing speech analyzer...")
+        speech_analyzer = SpeechAnalyzer()
+        print("Speech analyzer initialized successfully!")
+    except Exception as e:
+        logger.error(f"Failed to initialize speech analyzer: {e}")
+        SPEECH_ANALYSIS_AVAILABLE = False
+else:
+    print("Speech analyzer not available - advanced speech analysis will be disabled")
 
-print("Initializing video analyzer...")
-video_analyzer = VideoAnalyzer()
-print("Video analyzer initialized!")
+video_analyzer = None
+if VIDEO_ANALYSIS_AVAILABLE:
+    try:
+        print("Initializing video analyzer...")
+        video_analyzer = VideoAnalyzer()
+        print("Video analyzer initialized successfully!")
+    except Exception as e:
+        logger.error(f"Failed to initialize video analyzer: {e}")
+        VIDEO_ANALYSIS_AVAILABLE = False
+else:
+    print("Video analyzer not available - advanced video analysis will be disabled")
 
 # Thread pool for parallel processing
 executor = ThreadPoolExecutor(max_workers=4)
@@ -421,16 +490,54 @@ def generate_expected_answers_pdf(session_id: str, answers_data: dict):
 @app.get("/")
 async def root():
     return {
-        "message": "Face2Phrase - Optimized Version",
+        "message": "Face2Phrase - Enhanced Interview Assistant",
         "status": "running",
-        "optimizations": [
-            "Intelligent API key rotation",
-            "Parallel video processing",
-            "Faster Whisper model",
-            "Reduced video bitrate",
-            "Smart retry logic",
-            "Background task processing"
-        ]
+        "version": "2.0.0",
+        "features": {
+            "core": ["Interview Management", "Video Recording", "Session Management"],
+            "ai": ["Question Generation", "Feedback Analysis"] if GEMINI_AVAILABLE else ["Limited - No API Key"],
+            "speech": ["Transcription", "Acoustic Analysis"] if WHISPER_AVAILABLE else ["Disabled - Whisper Error"],
+            "video": ["Facial Analysis", "Emotion Detection"] if VIDEO_ANALYSIS_AVAILABLE else ["Disabled - Missing Dependencies"]
+        },
+        "system_status": {
+            "whisper": "available" if WHISPER_AVAILABLE else "unavailable",
+            "speech_analysis": "available" if SPEECH_ANALYSIS_AVAILABLE else "unavailable", 
+            "video_analysis": "available" if VIDEO_ANALYSIS_AVAILABLE else "unavailable",
+            "gemini_ai": "available" if GEMINI_AVAILABLE else "unavailable",
+            "pdf_generation": "available" if REPORTLAB_AVAILABLE else "unavailable"
+        }
+    }
+
+@app.get("/api/health")
+async def health_check():
+    """Detailed health check for troubleshooting"""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "dependencies": {
+            "whisper": {
+                "available": WHISPER_AVAILABLE,
+                "model_loaded": whisper_model is not None,
+                "error": "DLL initialization failed" if not WHISPER_AVAILABLE else None
+            },
+            "speech_analyzer": {
+                "available": SPEECH_ANALYSIS_AVAILABLE,
+                "initialized": speech_analyzer is not None
+            },
+            "video_analyzer": {
+                "available": VIDEO_ANALYSIS_AVAILABLE,
+                "initialized": video_analyzer is not None
+            },
+            "gemini_ai": {
+                "available": GEMINI_AVAILABLE,
+                "api_keys_configured": len(GEMINI_API_KEYS) > 0
+            }
+        },
+        "recommendations": [
+            "Install Visual C++ Redistributables if getting DLL errors",
+            "Use CPU-only PyTorch for Windows compatibility", 
+            "Check requirements-windows.txt for Windows-specific versions"
+        ] if not WHISPER_AVAILABLE else []
     }
 
 @app.get("/api/stats")
@@ -571,23 +678,34 @@ async def process_video_background(session_id: str, question_index: int, video_p
             str(audio_path)
         )
         
-        # Transcribe
-        transcription_file = str(audio_path) if audio_extracted else video_path
-        
-        result = await loop.run_in_executor(
-            executor,
-            lambda: whisper_model.transcribe(
-                transcription_file,
-                language="en",
-                fp16=False  # Better compatibility
-            )
-        )
-        
-        transcript_text = result["text"].strip()
+        # Transcribe with fallback
+        transcript_text = ""
+        if WHISPER_AVAILABLE and whisper_model:
+            try:
+                transcription_file = str(audio_path) if audio_extracted else video_path
+                
+                result = await loop.run_in_executor(
+                    executor,
+                    lambda: whisper_model.transcribe(
+                        transcription_file,
+                        language="en",
+                        fp16=False  # Better compatibility
+                    )
+                )
+                
+                transcript_text = result["text"].strip()
+            except Exception as e:
+                logger.error(f"Transcription failed: {e}")
+                transcript_text = "[Transcription unavailable - Whisper error]"
+        else:
+            transcript_text = "[Transcription unavailable - Whisper not loaded]"
         
         # Advanced Speech Analysis
         speech_analysis = None
-        if audio_extracted:
+        speech_visualization = None
+        speech_report = None
+        
+        if audio_extracted and SPEECH_ANALYSIS_AVAILABLE and speech_analyzer:
             try:
                 print(f"🎤 Starting speech analysis for question {question_index + 1}...")
                 speech_analysis = await loop.run_in_executor(
@@ -626,41 +744,47 @@ async def process_video_background(session_id: str, question_index: int, video_p
         
         # Advanced Video Analysis
         video_analysis = None
-        try:
-            print(f"📹 Starting video analysis for question {question_index + 1}...")
-            video_analysis = await loop.run_in_executor(
-                executor,
-                video_analyzer.analyze_video,
-                video_path
-            )
-            
-            # Generate video visualization
-            video_visualization = await loop.run_in_executor(
-                executor,
-                video_analyzer.create_video_visualization,
-                video_analysis
-            )
-            
-            # Generate video report
-            video_report = await loop.run_in_executor(
-                executor,
-                video_analyzer.generate_video_report,
-                video_analysis
-            )
-            
-            # Save video analysis results
-            video_analysis_path = session_dir / "reports" / f"video_analysis_{question_index + 1}.json"
-            async with aiofiles.open(video_analysis_path, 'w') as f:
-                await f.write(json.dumps({
-                    'analysis': video_analysis,
-                    'visualization': video_visualization,
-                    'report': video_report
-                }, indent=2))
-            
-            print(f"✅ Video analysis completed for question {question_index + 1}")
-            
-        except Exception as e:
-            print(f"⚠️ Video analysis error for question {question_index + 1}: {str(e)}")
+        video_visualization = None
+        video_report = None
+        
+        if VIDEO_ANALYSIS_AVAILABLE and video_analyzer:
+            try:
+                print(f"📹 Starting video analysis for question {question_index + 1}...")
+                video_analysis = await loop.run_in_executor(
+                    executor,
+                    video_analyzer.analyze_video,
+                    video_path
+                )
+                
+                # Generate video visualization
+                video_visualization = await loop.run_in_executor(
+                    executor,
+                    video_analyzer.create_video_visualization,
+                    video_analysis
+                )
+                
+                # Generate video report
+                video_report = await loop.run_in_executor(
+                    executor,
+                    video_analyzer.generate_video_report,
+                    video_analysis
+                )
+                
+                # Save video analysis results
+                video_analysis_path = session_dir / "reports" / f"video_analysis_{question_index + 1}.json"
+                async with aiofiles.open(video_analysis_path, 'w') as f:
+                    await f.write(json.dumps({
+                        'analysis': video_analysis,
+                        'visualization': video_visualization,
+                        'report': video_report
+                    }, indent=2))
+                
+                print(f"✅ Video analysis completed for question {question_index + 1}")
+                
+            except Exception as e:
+                print(f"⚠️ Video analysis error for question {question_index + 1}: {str(e)}")
+        else:
+            print("⚠️ Video analysis disabled - missing dependencies")
         
         # Save transcript
         transcript_filename = f"question_{question_index + 1}.txt"
