@@ -103,12 +103,12 @@ def load_whisper_with_fallback(model_name: str = "base"):
         
         # Load model with CPU-only
         model = whisper.load_model(model_name, device="cpu")
-        logger.info(f"Successfully loaded Whisper model: {model_name} (CPU mode)")
+        logger.info(f"✅ Successfully loaded REAL Whisper model: {model_name} (CPU mode)")
         return model
         
     except Exception as e:
-        logger.error(f"Failed to load Whisper: {e}")
-        logger.info("Using fallback transcription mode")
+        logger.error(f"❌ Failed to load real Whisper: {e}")
+        logger.info("⚠️ Using fallback transcription mode")
         return WhisperFallback()
 
 def transcribe_with_fallback(model, audio_path: str, **kwargs):
