@@ -1,8 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, StopCircle, Send, CheckCircle, Loader, User, Briefcase, FileText, Clock, BarChart3, AlertCircle, Activity } from 'lucide-react';
+import ModernInterviewAssistant from './ModernApp';
 import AnalysisDashboard from './AnalysisDashboard';
 
-const InterviewAssistant = () => {
+const App = () => {
+  return <ModernInterviewAssistant />;
+};
+
+const LegacyInterviewAssistant = () => {
   const [step, setStep] = useState('form');
   const [formData, setFormData] = useState({
     name: '',
@@ -1053,4 +1058,4 @@ const InterviewAssistant = () => {
     );
   }
 }
-export default InterviewAssistant;
+export default App;

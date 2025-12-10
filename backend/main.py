@@ -60,18 +60,32 @@ except Exception as e:
 
 # Analysis modules with fallbacks
 try:
-    from speech_analyzer_simple import SpeechAnalyzer
+    from real_speech_analyzer import RealSpeechAnalyzer, real_speech_analyzer
     SPEECH_ANALYSIS_AVAILABLE = True
+    logger.info("✅ Real speech analyzer loaded successfully")
 except ImportError as e:
-    logger.warning(f"Speech analyzer not available: {e}")
-    SPEECH_ANALYSIS_AVAILABLE = False
+    logger.warning(f"Real speech analyzer not available, trying fallback: {e}")
+    try:
+        from speech_analyzer_simple import SpeechAnalyzer
+        SPEECH_ANALYSIS_AVAILABLE = True
+        logger.info("⚠️ Using simple speech analyzer fallback")
+    except ImportError as e2:
+        logger.warning(f"Speech analyzer not available: {e2}")
+        SPEECH_ANALYSIS_AVAILABLE = False
 
 try:
-    from video_analyzer_simple import VideoAnalyzer
+    from real_video_analyzer import RealVideoAnalyzer, real_video_analyzer
     VIDEO_ANALYSIS_AVAILABLE = True
+    logger.info("✅ Real video analyzer loaded successfully")
 except ImportError as e:
-    logger.warning(f"Video analyzer not available: {e}")
-    VIDEO_ANALYSIS_AVAILABLE = False
+    logger.warning(f"Real video analyzer not available, trying fallback: {e}")
+    try:
+        from video_analyzer_simple import VideoAnalyzer
+        VIDEO_ANALYSIS_AVAILABLE = True
+        logger.info("⚠️ Using simple video analyzer fallback")
+    except ImportError as e2:
+        logger.warning(f"Video analyzer not available: {e2}")
+        VIDEO_ANALYSIS_AVAILABLE = False
 
 # Initialize FastAPI
 app = FastAPI(title="Face2Phrase Interview Assistant - Optimized")
@@ -253,8 +267,10 @@ if WHISPER_AVAILABLE:
         whisper_model = load_whisper_with_fallback("base")
         if isinstance(whisper_model, WhisperFallback):
             print("⚠️ Using Whisper fallback mode due to DLL issues")
+            WHISPER_AVAILABLE = False  # Mark as unavailable for real transcription
         else:
-            print("✅ Whisper model loaded successfully!")
+            print("✅ REAL Whisper model loaded successfully!")
+            WHISPER_AVAILABLE = True  # Confirm real Whisper is available
     except Exception as e:
         logger.error(f"Failed to load Whisper model: {e}")
         print("⚠️ Whisper not available - speech-to-text will be disabled")
@@ -267,25 +283,33 @@ speech_analyzer = None
 if SPEECH_ANALYSIS_AVAILABLE:
     try:
         print("Initializing speech analyzer...")
-        speech_analyzer = SpeechAnalyzer()
-        print("Speech analyzer initialized successfully!")
+        if 'real_speech_analyzer' in globals() and real_speech_analyzer:
+            speech_analyzer = real_speech_analyzer
+            print("✅ Real speech analyzer initialized successfully!")
+        else:
+            speech_analyzer = SpeechAnalyzer()
+            print("⚠️ Simple speech analyzer initialized successfully!")
     except Exception as e:
         logger.error(f"Failed to initialize speech analyzer: {e}")
         SPEECH_ANALYSIS_AVAILABLE = False
 else:
-    print("Speech analyzer not available - advanced speech analysis will be disabled")
+    print("❌ Speech analyzer not available - advanced speech analysis will be disabled")
 
 video_analyzer = None
 if VIDEO_ANALYSIS_AVAILABLE:
     try:
         print("Initializing video analyzer...")
-        video_analyzer = VideoAnalyzer()
-        print("Video analyzer initialized successfully!")
+        if 'real_video_analyzer' in globals() and real_video_analyzer:
+            video_analyzer = real_video_analyzer
+            print("✅ Real video analyzer initialized successfully!")
+        else:
+            video_analyzer = VideoAnalyzer()
+            print("⚠️ Simple video analyzer initialized successfully!")
     except Exception as e:
         logger.error(f"Failed to initialize video analyzer: {e}")
         VIDEO_ANALYSIS_AVAILABLE = False
 else:
-    print("Video analyzer not available - advanced video analysis will be disabled")
+    print("❌ Video analyzer not available - advanced video analysis will be disabled")
 
 # Thread pool for parallel processing
 executor = ThreadPoolExecutor(max_workers=4)
