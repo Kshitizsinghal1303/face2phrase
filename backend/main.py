@@ -1,7 +1,8 @@
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 import google.generativeai as genai
 import whisper
@@ -24,8 +25,22 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import threading
 
+# Import our custom modules
+from auth import (
+    UserCreate, UserLogin, Token, User, authenticate_user, 
+    create_access_token, get_current_user_from_token, create_user,
+    ACCESS_TOKEN_EXPIRE_MINUTES
+)
+from acoustic_analysis import (
+    extract_acoustic_features, generate_acoustic_visualization,
+    save_acoustic_features, load_acoustic_features, get_acoustic_summary
+)
+
 # Initialize FastAPI
-app = FastAPI(title="Face2Phrase Interview Assistant - Optimized")
+app = FastAPI(title="Face2Phrase Interview Assistant - Enhanced")
+
+# Security
+security = HTTPBearer()
 
 # CORS configuration
 app.add_middleware(
@@ -408,17 +423,57 @@ def generate_expected_answers_pdf(session_id: str, answers_data: dict):
 @app.get("/")
 async def root():
     return {
-        "message": "Face2Phrase - Optimized Version",
+        "message": "Face2Phrase - Enhanced Version",
         "status": "running",
-        "optimizations": [
+        "features": [
+            "Modern UI with authentication",
+            "Acoustic feature visualization",
             "Intelligent API key rotation",
             "Parallel video processing",
-            "Faster Whisper model",
-            "Reduced video bitrate",
-            "Smart retry logic",
-            "Background task processing"
+            "Real-time audio analysis",
+            "Interactive charts and graphs"
         ]
     }
+
+# ==================== AUTHENTICATION ENDPOINTS ====================
+
+@app.post("/api/auth/register", response_model=User)
+async def register(user_data: UserCreate):
+    """Register a new user"""
+    try:
+        user = create_user(user_data)
+        return user
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/auth/login", response_model=Token)
+async def login(user_credentials: UserLogin):
+    """Authenticate user and return access token"""
+    user = authenticate_user(user_credentials.username, user_credentials.password)
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user["username"]}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/api/auth/me", response_model=User)
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get current user information"""
+    return get_current_user_from_token(credentials.credentials)
+
+# Helper function to get current user
+async def get_current_user_dependency(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Dependency to get current user from token"""
+    return get_current_user_from_token(credentials.credentials)
 
 @app.get("/api/stats")
 async def get_api_stats():
@@ -584,10 +639,25 @@ async def process_video_background(session_id: str, question_index: int, video_p
         if "transcripts" not in sessions[session_id]:
             sessions[session_id]["transcripts"] = {}
         
+        # Extract acoustic features
+        acoustic_features = {}
+        if audio_extracted and audio_path.exists():
+            acoustic_features = await loop.run_in_executor(
+                executor,
+                extract_acoustic_features,
+                str(audio_path)
+            )
+            
+            # Save acoustic features
+            save_acoustic_features(session_id, question_index, acoustic_features)
+            
+            print(f"🎵 Extracted acoustic features for question {question_index + 1}")
+
         sessions[session_id]["transcripts"][question_index] = {
             "text": transcript_text,
             "video_file": video_filename,
             "audio_file": audio_filename if audio_extracted else None,
+            "acoustic_features": acoustic_features,
             "timestamp": datetime.now().isoformat()
         }
         
@@ -926,6 +996,93 @@ async def view_answers(session_id: str):
     
     return HTMLResponse(content=html)
 
+# ==================== ACOUSTIC ANALYSIS ENDPOINTS ====================
+
+@app.get("/api/acoustic-features/{session_id}/{question_index}")
+async def get_acoustic_features(
+    session_id: str, 
+    question_index: int,
+    current_user: dict = Depends(get_current_user_dependency)
+):
+    """Get acoustic features for a specific question"""
+    try:
+        features = load_acoustic_features(session_id, question_index)
+        if not features:
+            raise HTTPException(status_code=404, detail="Acoustic features not found")
+        
+        return {
+            "session_id": session_id,
+            "question_index": question_index,
+            "features": features,
+            "summary": get_acoustic_summary(features)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/acoustic-visualization/{session_id}/{question_index}")
+async def get_acoustic_visualization(
+    session_id: str, 
+    question_index: int,
+    current_user: dict = Depends(get_current_user_dependency)
+):
+    """Generate acoustic visualization for a specific question"""
+    try:
+        features = load_acoustic_features(session_id, question_index)
+        if not features:
+            raise HTTPException(status_code=404, detail="Acoustic features not found")
+        
+        # Generate visualization
+        loop = asyncio.get_event_loop()
+        visualization_base64 = await loop.run_in_executor(
+            executor,
+            generate_acoustic_visualization,
+            features
+        )
+        
+        return {
+            "session_id": session_id,
+            "question_index": question_index,
+            "visualization": visualization_base64,
+            "summary": get_acoustic_summary(features)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/session-history/{session_id}")
+async def get_session_history(
+    session_id: str,
+    current_user: dict = Depends(get_current_user_dependency)
+):
+    """Get complete session history with acoustic data"""
+    try:
+        if session_id not in sessions:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        session_data = sessions[session_id]
+        history = []
+        
+        for i, question in enumerate(session_data.get("questions", [])):
+            transcript_data = session_data.get("transcripts", {}).get(i, {})
+            acoustic_features = load_acoustic_features(session_id, i)
+            
+            history.append({
+                "question_index": i,
+                "question": question,
+                "transcript": transcript_data.get("text", ""),
+                "timestamp": transcript_data.get("timestamp", ""),
+                "has_acoustic_data": bool(acoustic_features),
+                "acoustic_summary": get_acoustic_summary(acoustic_features) if acoustic_features else None
+            })
+        
+        return {
+            "session_id": session_id,
+            "candidate": session_data.get("candidate", {}),
+            "history": history,
+            "total_questions": len(session_data.get("questions", []))
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint"""
@@ -936,7 +1093,8 @@ async def health_check():
         "gemini_model": "configured",
         "active_sessions": len(sessions),
         "available_api_keys": len([s for s in stats if s["status"] == "available"]),
-        "total_api_calls": sum(s["usage_count"] for s in stats)
+        "total_api_calls": sum(s["usage_count"] for s in stats),
+        "features": ["authentication", "acoustic_analysis", "modern_ui"]
     }
 
 if __name__ == "__main__":
