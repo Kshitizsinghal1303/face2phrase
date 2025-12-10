@@ -1,0 +1,46 @@
+# Windows-specific requirements with CPU-only PyTorch
+# Install PyTorch first with: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# Core FastAPI dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+aiofiles==23.2.1
+
+# Google Gemini AI
+google-generativeai==0.3.1
+
+# Whisper for speech-to-text (will use CPU-only PyTorch)
+openai-whisper==20231117
+
+# Audio/Video processing
+ffmpeg-python==0.2.0
+pydub==0.25.1
+
+# Data handling
+pydantic==2.5.0
+python-dotenv==1.0.0
+
+# Database (optional, for future use)
+sqlalchemy==2.0.23
+
+# Additional utilities
+numpy>=1.21.0
+pandas>=1.3.0
+
+# Acoustic analysis
+librosa>=0.9.0
+scipy>=1.7.0
+matplotlib>=3.5.0
+soundfile>=0.10.0
+
+# Authentication
+bcrypt>=4.0.0
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# PDF generation
+reportlab>=3.6.0
+
+# Additional Windows-specific packages
+pywin32>=227; sys_platform == "win32"
