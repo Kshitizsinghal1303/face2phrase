@@ -437,7 +437,21 @@ async def generate_questions(candidate: CandidateInfo):
         session_id = str(uuid.uuid4())
         create_session_directory(session_id)
         
-        prompt = f"""Generate exactly 5 relevant interview questions for:
+        # Fallback questions for when API keys are not available
+        fallback_questions = [
+            f"Tell me about yourself and why you're interested in the {candidate.position} position.",
+            f"What relevant experience do you have for this {candidate.position} role?",
+            "Describe a challenging project you worked on and how you overcame obstacles.",
+            f"What are your key strengths that make you suitable for this {candidate.position} position?",
+            "Where do you see yourself in the next 3-5 years in your career?"
+        ]
+
+        questions = fallback_questions
+
+        # Try to use Gemini API if keys are available
+        if GEMINI_API_KEYS:
+            try:
+                prompt = f"""Generate exactly 5 relevant interview questions for:
 
 Position: {candidate.position}
 Experience: {candidate.experience}
@@ -455,28 +469,26 @@ Format:
 3. [Question]
 4. [Question]
 5. [Question]"""
-        
-        questions_text = await generate_with_gemini(prompt)
-        
-        questions = []
-        for line in questions_text.split('\n'):
-            line = line.strip()
-            if line and any(line.startswith(f"{i}.") for i in range(1, 10)):
-                question = line.split('.', 1)[1].strip()
-                if question:
-                    questions.append(question)
-        
-        fallback_questions = [
-            "Tell me about yourself and why you're interested in this position.",
-            "What relevant experience do you have for this role?",
-            "Describe a challenging project you worked on.",
-            "What are your key strengths for this position?",
-            "Where do you see yourself in the next 3-5 years?"
-        ]
-        
-        if len(questions) < 5:
-            questions.extend(fallback_questions[:5-len(questions)])
-        
+                
+                questions_text = await generate_with_gemini(prompt)
+                
+                parsed_questions = []
+                for line in questions_text.split('\n'):
+                    line = line.strip()
+                    if line and any(line.startswith(f"{i}.") for i in range(1, 10)):
+                        question = line.split('.', 1)[1].strip()
+                        if question:
+                            parsed_questions.append(question)
+                
+                if len(parsed_questions) >= 5:
+                    questions = parsed_questions[:5]
+                else:
+                    # Mix AI generated with fallback
+                    questions = parsed_questions + fallback_questions[:5-len(parsed_questions)]
+            except Exception as e:
+                print(f"⚠️ API generation failed, using fallback questions: {e}")
+                questions = fallback_questions
+
         questions = questions[:5]
         
         session_data = {
